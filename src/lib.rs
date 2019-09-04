@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "external_doc", feature(external_doc))]
+#![cfg_attr(feature = "non_exhaustive", feature(non_exhaustive))]
 #![cfg_attr(feature = "external_doc", doc(include = "lib.md"))]
 #![cfg_attr(
     not(feature = "external_doc"),
@@ -7,3 +8,4 @@
 )]
 
 mod cache_field;
+pub use cache_field::CacheField;
