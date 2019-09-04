@@ -115,7 +115,8 @@ const SIZE_SCALE_THRESHOLD: f64 = 10.0;
 const SIZE_PRECISION: usize = 2;
 
 impl CacheField {
-    fn as_usize(self) -> usize { (self as usize) }
+    /// Return this enums integer as a [usize] for array access purposes.
+    pub fn as_usize(self) -> usize { (self as usize) }
 
     /// Format a given [u64] as per the format type of this field
     ///
