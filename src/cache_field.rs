@@ -73,8 +73,55 @@ pub enum CacheField {
     ZeroTimeStamp        = 31,
 }
 
+impl CacheField {
+    fn as_usize(self) -> usize { (self as usize) }
+}
+
+#[cfg_attr(feature = "external_doc", doc(include = "CacheFieldData.md"))]
+#[cfg_attr(
+    not(feature = "external_doc"),
+    doc = "A hash-like interface for accessing values using Enums as keys"
+)]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct CacheFieldData {
+    items: [u64; 32],
+}
+
+impl CacheFieldData {
+    /// Set the stored value for the [CacheField] specified
+    ///
+    /// ```rust
+    /// # use ccache_stats_reader::{CacheField,CacheFieldData};
+    /// let mut data: CacheFieldData = Default::default();
+    /// data.set_field(CacheField::CacheHitDir, 32);
+    /// ```
+    pub fn set_field(&mut self, f: CacheField, v: u64) {
+        self.items[f.as_usize()] = v
+    }
+
+    /// Get a stored value for the [CacheField] specified
+    ///
+    /// ```rust
+    /// # use ccache_stats_reader::{CacheField,CacheFieldData};
+    /// # let mut data: CacheFieldData = Default::default();
+    /// # data.set_field(CacheField::CacheHitDir, 32);
+    /// assert_eq!(data.get_field(CacheField::CacheHitDir), 32);
+    /// ```
+    pub fn get_field(&self, f: CacheField) -> u64 { self.items[f.as_usize()] }
+}
+
 #[test]
 fn test_cache_field() -> std::io::Result<()> {
-    let _ = CacheField::None;
+    assert_eq!(CacheField::None.as_usize(), 0);
+    assert_eq!(CacheField::ZeroTimeStamp.as_usize(), 31);
+    Ok(())
+}
+#[test]
+fn test_cache_field_data() -> std::io::Result<()> {
+    let mut d: CacheFieldData = Default::default();
+    d.set_field(CacheField::None, 1);
+    d.set_field(CacheField::ZeroTimeStamp, 2);
+    assert_eq!(d.get_field(CacheField::None), 1);
+    assert_eq!(d.get_field(CacheField::ZeroTimeStamp), 2);
     Ok(())
 }

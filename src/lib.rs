@@ -8,4 +8,4 @@
 )]
 
 mod cache_field;
-pub use cache_field::CacheField;
+pub use cache_field::{CacheField, CacheFieldData};
