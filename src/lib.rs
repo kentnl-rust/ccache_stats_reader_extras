@@ -55,11 +55,7 @@ impl Default for CacheLeaf {
     }
 }
 
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-    path::PathBuf,
-};
+use std::{fs::File, io::Read, path::PathBuf};
 
 impl CacheLeaf {
     /// Construct a [CacheLeaf] by reading a specified input file
@@ -71,7 +67,7 @@ impl CacheLeaf {
     /// ```
     pub fn read_file(f: PathBuf) -> Result<Self, ErrorKind> {
         let mut me: Self = Default::default();
-        let my_file = File::open(&f)?;
+        let mut my_file = File::open(&f)?;
 
         // This is a clusterfuck really, the internal .modified takes a lot of
         // mangling to get the internal unix-time value out of the metadata,
@@ -87,18 +83,17 @@ impl CacheLeaf {
             0,
         );
 
-        // Note the default of 8k for BufReader is excessive for us, as it
-        // accounts for 8/9ths of the overall heap size, which is
-        // silly when you consider the file we're reading is typically
-        // under 200 *bytes*, and all lines are under *21* bytes each,
-        // and the whole point of using BufReader is to get the lines()
-        // abstraction.
+        // We would use a BufReader here, but that cocks up amazingly when
+        // some idiot passes a directory as the PathBuf, and BufReader
+        // repeatedly invokes File::read() which repeatedly returns an
+        // Err(), and as an Err() is a Some(Err()) not a None(),
+        // doesn't end the iteration, and so on the next iteration ... it
+        // calls read() again, gets the same result, and subsequently
+        // iterates forever doing nothing.
         //
-        // With an 8k buffer we're twice as bad as the native ccache
-        // implementation for heap usage, with a 100byte buffer, we're
-        // 1/5th of the native ccache's heap use :)
-        let buf = BufReader::with_capacity(100, my_file);
-
+        // We have a <1k file, who cares!?
+        let mut buf = String::new();
+        my_file.read_to_string(&mut buf)?;
         // We collect all lines verbatim, and then use the FIELD_DATA_ORDER
         // array to pick values out of it. That way if there are lines in the
         // input source that we haven't coded behaviour for yet, it won't
@@ -107,25 +102,18 @@ impl CacheLeaf {
         // The input source having fewer items than FIELD_DATA_ORDER is gated
         // by the field_addr <= last_line control, so too-few lines will
         // result in just a bunch of 0 entries in the dataset.
-        let lines: Vec<std::io::Result<String>> = buf.lines().collect();
+        let lines: Vec<&str> = buf.lines().collect();
         let last_line = lines.len() - 1;
 
         for field in FIELD_DATA_ORDER {
             let field_addr: usize = field.as_usize();
             if field_addr <= last_line {
-                if let Ok(line) = &lines[field_addr] {
-                    if let Ok(v) = line.parse::<u64>() {
-                        me.fields.set_field(*field, v);
-                    } else {
-                        unimplemented!(
-                            "Line {} in {:?} did not parse as u64",
-                            field_addr,
-                            f
-                        );
-                    }
+                let line = &lines[field_addr];
+                if let Ok(v) = line.parse::<u64>() {
+                    me.fields.set_field(*field, v);
                 } else {
                     unimplemented!(
-                        "Line {} in {:?} did not read correctly",
+                        "Line {} in {:?} did not parse as u64",
                         field_addr,
                         f
                     );
