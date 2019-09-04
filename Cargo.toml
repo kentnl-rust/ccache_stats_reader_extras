@@ -17,6 +17,10 @@ nightly = ["external_doc", "non_exhaustive"]
 external_doc = []
 non_exhaustive = []
 
+[dependencies.chrono]
+# This is the minimum version I can get compiling on 1.31.0
+version = "> 0.2.23"
+
 [package.metadata.docs.rs]
 features = [ "nightly" ]
 
