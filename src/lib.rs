@@ -8,4 +8,6 @@
 )]
 
 mod cache_field;
-pub use cache_field::{CacheField, CacheFieldData};
+pub use cache_field::{
+    CacheField, CacheFieldData, FIELD_DATA_ORDER, FIELD_DISPLAY_ORDER,
+};

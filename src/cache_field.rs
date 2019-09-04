@@ -110,6 +110,81 @@ impl CacheFieldData {
     pub fn get_field(&self, f: CacheField) -> u64 { self.items[f.as_usize()] }
 }
 
+/// Contains an array of [CacheField] in "data order" ( that is, the sequence
+/// they should appear in a cache stats file )
+pub const FIELD_DATA_ORDER: &[CacheField] = &[
+    CacheField::None,
+    CacheField::StdOut,
+    CacheField::Status,
+    CacheField::Error,
+    CacheField::ToCache,
+    CacheField::PreProcessor,
+    CacheField::Compiler,
+    CacheField::Missing,
+    CacheField::CacheHitCpp,
+    CacheField::Args,
+    CacheField::Link,
+    CacheField::NumFiles,
+    CacheField::TotalSize,
+    CacheField::ObsoleteMaxFiles,
+    CacheField::ObsoleteMaxSize,
+    CacheField::SourceLang,
+    CacheField::BadOutputFile,
+    CacheField::NoInput,
+    CacheField::Multiple,
+    CacheField::ConfTest,
+    CacheField::UnsupportedOption,
+    CacheField::OutStdOut,
+    CacheField::CacheHitDir,
+    CacheField::NoOutput,
+    CacheField::EmptyOutput,
+    CacheField::BadExtraFile,
+    CacheField::CompCheck,
+    CacheField::CantUsePch,
+    CacheField::PreProcessing,
+    CacheField::NumCleanUps,
+    CacheField::UnsupportedDirective,
+    CacheField::ZeroTimeStamp,
+];
+
+/// Contains an array of [CacheField] in "display order" ( that is, the
+/// sequence used when pretty-printing for end user consumption ), as defined
+/// in `ccache`'s `stats.cpp` (formerly `stats.c` )
+pub const FIELD_DISPLAY_ORDER: &[CacheField] = &[
+    CacheField::ZeroTimeStamp,
+    CacheField::CacheHitDir,
+    CacheField::CacheHitCpp,
+    CacheField::ToCache,
+    CacheField::Link,
+    CacheField::PreProcessing,
+    CacheField::Multiple,
+    CacheField::StdOut,
+    CacheField::NoOutput,
+    CacheField::EmptyOutput,
+    CacheField::Status,
+    CacheField::Error,
+    CacheField::PreProcessor,
+    CacheField::CantUsePch,
+    CacheField::Compiler,
+    CacheField::Missing,
+    CacheField::Args,
+    CacheField::SourceLang,
+    CacheField::CompCheck,
+    CacheField::ConfTest,
+    CacheField::UnsupportedOption,
+    CacheField::UnsupportedDirective,
+    CacheField::OutStdOut,
+    CacheField::BadOutputFile,
+    CacheField::NoInput,
+    CacheField::BadExtraFile,
+    CacheField::NumCleanUps,
+    CacheField::NumFiles,
+    CacheField::TotalSize,
+    CacheField::ObsoleteMaxFiles,
+    CacheField::ObsoleteMaxSize,
+    CacheField::None,
+];
+
 #[test]
 fn test_cache_field() -> std::io::Result<()> {
     assert_eq!(CacheField::None.as_usize(), 0);
@@ -123,5 +198,25 @@ fn test_cache_field_data() -> std::io::Result<()> {
     d.set_field(CacheField::ZeroTimeStamp, 2);
     assert_eq!(d.get_field(CacheField::None), 1);
     assert_eq!(d.get_field(CacheField::ZeroTimeStamp), 2);
+    Ok(())
+}
+#[test]
+fn test_cache_field_orders() -> std::io::Result<()> {
+    match FIELD_DISPLAY_ORDER[0] {
+        CacheField::ZeroTimeStamp => {},
+        _ => panic!("Display 0 is not ZeroTimeStamp"),
+    }
+    match FIELD_DATA_ORDER[0] {
+        CacheField::None => {},
+        _ => panic!("Data 0 is not None"),
+    }
+    match FIELD_DISPLAY_ORDER[31] {
+        CacheField::None => {},
+        _ => panic!("Display 31 is not None"),
+    }
+    match FIELD_DATA_ORDER[31] {
+        CacheField::ZeroTimeStamp => {},
+        _ => panic!("Data 31 is not ZeroTimeStamp"),
+    }
     Ok(())
 }
