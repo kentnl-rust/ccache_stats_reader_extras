@@ -5,3 +5,5 @@
     doc = "This crate implements a simple interface for accessing `ccache` \
            stats without needing an `exec` call."
 )]
+
+mod cache_field;
