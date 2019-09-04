@@ -135,3 +135,75 @@ impl CacheLeaf {
         Ok(me)
     }
 }
+
+#[cfg_attr(feature = "external_doc", doc(include = "CacheDir.md"))]
+#[cfg_attr(
+    not(feature = "external_doc"),
+    doc = "A container for collecting statistics from a ccache directory."
+)]
+#[derive(Debug, Clone, Copy)]
+pub struct CacheDir {
+    fields: CacheFieldData,
+    mtime:  chrono::DateTime<Utc>,
+}
+
+impl Default for CacheDir {
+    fn default() -> Self {
+        Self { fields: Default::default(), mtime: Utc.timestamp(0, 0) }
+    }
+}
+
+impl CacheDir {
+    /// Read a specified ccache root directory and collect statistics
+    pub fn read_dir(d: PathBuf) -> Result<Self, ErrorKind> {
+        let mut me: Self = Default::default();
+        me.add_leaf(d.join("stats"))?;
+        for i in 0..=0xF {
+            if let Some(c) = std::char::from_digit(i, 16) {
+                me.add_leaf(d.join(c.to_string()).join("stats"))?;
+            }
+        }
+        Ok(me)
+    }
+
+    fn stash_field(&mut self, field: CacheField, value: u64) {
+        let current_value = self.fields.get_field(field);
+        match field {
+            CacheField::ZeroTimeStamp => {
+                if value > current_value {
+                    self.fields.set_field(field, value);
+                }
+            },
+            _ => {
+                self.fields.set_field(field, current_value + value);
+            },
+        }
+    }
+
+    fn add_leaf(&mut self, f: PathBuf) -> Result<(), ErrorKind> {
+        let leaf_result = CacheLeaf::read_file(f);
+        if let Ok(leaf) = &leaf_result {
+            self.merge_leaf(leaf);
+            return Ok(());
+        }
+        if let Err(e) = leaf_result {
+            if let ErrorKind::IoError(io) = &e {
+                if io.kind() == std::io::ErrorKind::NotFound {
+                    return Ok(());
+                }
+            }
+            return Err(e);
+        }
+        Ok(())
+    }
+
+    fn merge_leaf(&mut self, leaf: &CacheLeaf) {
+        for field in FIELD_DATA_ORDER {
+            let value = leaf.fields.get_field(*field);
+            self.stash_field(*field, value);
+        }
+        if self.mtime < leaf.mtime {
+            self.mtime = leaf.mtime;
+        }
+    }
+}
