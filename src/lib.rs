@@ -207,3 +207,31 @@ impl CacheDir {
         }
     }
 }
+
+#[cfg_attr(
+    feature = "external_doc",
+    doc(include = "CacheFieldCollection.md")
+)]
+#[cfg_attr(
+    not(feature = "external_doc"),
+    doc = "An abstact representation of 'a thing' that can expose data \
+           about its unit."
+)]
+pub trait CacheFieldCollection {
+    /// Returns a struct containing data recorded for this thing
+    fn fields(&self) -> &CacheFieldData;
+    /// Returns a timestamp indicating time of last modification/update
+    fn mtime(&self) -> &chrono::DateTime<Utc>;
+}
+
+impl CacheFieldCollection for CacheLeaf {
+    fn fields(&self) -> &CacheFieldData { &self.fields }
+
+    fn mtime(&self) -> &chrono::DateTime<Utc> { &self.mtime }
+}
+
+impl CacheFieldCollection for CacheDir {
+    fn fields(&self) -> &CacheFieldData { &self.fields }
+
+    fn mtime(&self) -> &chrono::DateTime<Utc> { &self.mtime }
+}
