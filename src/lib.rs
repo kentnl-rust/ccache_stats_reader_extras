@@ -27,6 +27,15 @@ pub enum ErrorKind {
     Stringy(String),
     /// Proxy enum for errors that are [std::time::SystemTimeError]'s
     SysTime(std::time::SystemTimeError),
+    /// Error parsing a u64 from a file
+    ParseU64Error {
+        /// The string that was attempted to be parsed
+        input_value: String,
+        /// The line of the file that was trying to be decoded
+        input_line: usize,
+        /// The file that was being read
+        input_file: PathBuf,
+    },
 }
 
 impl From<std::io::Error> for ErrorKind {
@@ -55,7 +64,11 @@ impl Default for CacheLeaf {
     }
 }
 
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+    path::PathBuf,
+};
 
 impl CacheLeaf {
     /// Construct a [CacheLeaf] by reading a specified input file
@@ -67,7 +80,7 @@ impl CacheLeaf {
     /// ```
     pub fn read_file(f: PathBuf) -> Result<Self, ErrorKind> {
         let mut me: Self = Default::default();
-        let mut my_file = File::open(&f)?;
+        let my_file = File::open(&f)?;
 
         // This is a clusterfuck really, the internal .modified takes a lot of
         // mangling to get the internal unix-time value out of the metadata,
@@ -83,41 +96,64 @@ impl CacheLeaf {
             0,
         );
 
-        // We would use a BufReader here, but that cocks up amazingly when
-        // some idiot passes a directory as the PathBuf, and BufReader
-        // repeatedly invokes File::read() which repeatedly returns an
-        // Err(), and as an Err() is a Some(Err()) not a None(),
-        // doesn't end the iteration, and so on the next iteration ... it
-        // calls read() again, gets the same result, and subsequently
-        // iterates forever doing nothing.
-        //
-        // We have a <1k file, who cares!?
+        // Note the default of 8k for BufReader is excessive for us, as it
+        // accounts for 8/9ths of the overall heap size, which is
+        // silly when you consider the file we're reading is typically
+        // under 200 *bytes*, and all lines are under *21* bytes each,
+        // and the whole point of using BufReader is to get the read_line()
+        // abstraction.
+        let mut bufreader = BufReader::with_capacity(100, my_file);
         let mut buf = String::new();
-        my_file.read_to_string(&mut buf)?;
-        // We collect all lines verbatim, and then use the FIELD_DATA_ORDER
-        // array to pick values out of it. That way if there are lines in the
-        // input source that we haven't coded behaviour for yet, it won't
-        // result in array-index-out-of-bounds problems at runtime.
-        //
-        // The input source having fewer items than FIELD_DATA_ORDER is gated
-        // by the field_addr <= last_line control, so too-few lines will
-        // result in just a bunch of 0 entries in the dataset.
-        let lines: Vec<&str> = buf.lines().collect();
-        let last_line = lines.len() - 1;
 
         for field in FIELD_DATA_ORDER {
-            let field_addr: usize = field.as_usize();
-            if field_addr <= last_line {
-                let line = &lines[field_addr];
-                if let Ok(v) = line.parse::<u64>() {
-                    me.fields.set_field(*field, v);
-                } else {
-                    unimplemented!(
-                        "Line {} in {:?} did not parse as u64",
-                        field_addr,
-                        f
-                    );
-                }
+            // We have to use this readline + match pattern, because the
+            // default implementation of BufReader() + lines().collect() fails
+            // abysmally if a user passes a directory instead of a file, as
+            // the implementation of the Lines iterator has no state, and just
+            // relays any errors it gets as a Some(Err()).
+            //
+            // So the collect() calls next() repeatedly, each time getting the
+            // same Some(Err()), and never returning a None(), even though
+            // read() on a directory will never return anything other than an
+            // Err().
+            //
+            // So the iterator generates an infinite stream of Some(Err())
+            // which collect then tries to make a vector from, and that turns
+            // out to be a good way to eat ram and do nothing else.
+            //
+            // Bug: https://github.com/rust-lang/rust/issues/64144
+            //
+            match bufreader.read_line(&mut buf) {
+                // If we run out of input lines before we reach the end of
+                // FIELD_DATA_ORDER, remaining fields will be
+                // their default (0) and we just stop reading the file.
+                Ok(0) => break,
+                // This fork should be followed on the first read_line call if
+                // the fh represents a directory.
+                // Otherwise it will be followed only on file read errors
+                Err(e) => return Err(ErrorKind::IoError(e)),
+                Ok(_n) => {
+                    // Cribbed from the BufRead source
+                    // trims trailing linefeed tokens.
+                    if buf.ends_with('\n') {
+                        let _ = buf.pop();
+                        if buf.ends_with('\r') {
+                            let _ = buf.pop();
+                        }
+                    }
+                    let field_addr: usize = field.as_usize();
+                    if let Ok(v) = buf.parse::<u64>() {
+                        me.fields.set_field(*field, v);
+                    } else {
+                        return Err(ErrorKind::ParseU64Error {
+                            input_line:  field_addr,
+                            input_value: buf,
+                            input_file:  f,
+                        });
+                    }
+                    // important: otherwise buf grows forever.
+                    buf.clear();
+                },
             }
         }
         Ok(me)
