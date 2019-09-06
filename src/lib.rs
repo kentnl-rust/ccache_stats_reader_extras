@@ -36,6 +36,13 @@ pub enum ErrorKind {
         /// The file that was being read
         input_file: PathBuf,
     },
+    /// A path to a non-file was passed to CacheLeaf for reading,
+    /// but it turned out to be the kind of thing that can't be expected to
+    /// be read (like a directory)
+    CacheLeafNonFile {
+        /// The Path
+        input_path: PathBuf,
+    },
 }
 
 impl From<std::io::Error> for ErrorKind {
@@ -81,15 +88,43 @@ impl CacheLeaf {
     pub fn read_file(f: PathBuf) -> Result<Self, ErrorKind> {
         let mut me: Self = Default::default();
         let my_file = File::open(&f)?;
+        let my_meta = my_file.metadata()?;
 
+        // Metadata.is_file() only asserts the inode(7) type is a S_IFREG,
+        // which excludes various classes of file descriptors that are
+        // openable and readable in normal conditions, for instance,
+        // S_IFIFO, which one could trip into using if they invoked the
+        // command in a shell, and used shell redirection to simulate
+        // a file, eg:
+        //
+        // ccache_stats_leaf <( program_generates_a_stats_file_to_stdout )
+        //
+        // This passes (on unix) a pipe such as /dev/fd/63 such that:
+        //    ( st_mode & S_IFMT ) == S_IFIFO
+        //
+        // (Where: S_IFMT = 0_170_00, S_IFIFO = 0_010_000)
+        //
+        // Demo:
+        //  perl -e 'my ($dev, $ino, $mode, @rest) = stat($ARGV[0]);
+        //           printf qq[%s => %07O\n], $ARGV[0], $mode;
+        //           printf qq[%07O\n], $mode & 0_170_000 ' <( echo foo )
+        //  /dev/fd/63 => 0010600
+        //  0010000
+        //
+        // using is_file() here would cause it to bail, when continuing is
+        // just fine.
+        if my_meta.is_dir() {
+            return Err(ErrorKind::CacheLeafNonFile { input_path: f });
+        }
         // This is a clusterfuck really, the internal .modified takes a lot of
         // mangling to get the internal unix-time value out of the metadata,
         // and when it does, its a u64, but chrono's timestamp takes an i64
         // ... there surely has to be a better way, but everything I tried at
         // least required me to rely on features that are very new in rust.
         me.mtime = Utc.timestamp(
-            my_file
-                .metadata()?
+            // Returns a timestamp indicating time of last
+            // modification/update
+            my_meta
                 .modified()?
                 .duration_since(std::time::UNIX_EPOCH)?
                 .as_secs() as i64,
