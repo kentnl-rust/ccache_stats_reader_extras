@@ -281,6 +281,8 @@ pub trait CacheFieldCollection {
     fn fields(&self) -> &CacheFieldData;
     /// Returns a timestamp indicating time of last modification/update
     fn mtime(&self) -> &chrono::DateTime<Utc>;
+    /// Returns a value for the named field
+    fn get_field(&self, f: CacheField) -> u64 { self.fields().get_field(f) }
 }
 
 impl CacheFieldCollection for CacheLeaf {

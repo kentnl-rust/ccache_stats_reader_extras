@@ -13,8 +13,7 @@ fn main() {
     ))
     .unwrap();
 
-    let data = leaf.fields();
     for &field in FIELD_DATA_ORDER {
-        println!("{:?}: {}", field, data.get_field(field));
+        println!("{:?}: {}", field, leaf.get_field(field));
     }
 }

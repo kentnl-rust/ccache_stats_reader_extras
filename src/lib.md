@@ -12,6 +12,6 @@ times in-process without adding an `exec()` penalty to everything.
 use ccache_stats_reader::{CacheDir,CacheField,CacheFieldCollection};
 
 let stats = CacheDir::read_dir("/home/foo/.ccache/").unwrap();
-println!("Direct Cache Hits: {:?}", stats.fields().get_field(CacheField::CacheHitDir));
-println!("Cache Last Zero'd: {}", CacheField::ZeroTimeStamp.format_value( stats.fields().get_field(CacheField::ZeroTimeStamp))
+println!("Direct Cache Hits: {:?}", stats.get_field(CacheField::CacheHitDir));
+println!("Cache Last Zero'd: {}", CacheField::ZeroTimeStamp.format_value( stats.get_field(CacheField::ZeroTimeStamp))
 ```
