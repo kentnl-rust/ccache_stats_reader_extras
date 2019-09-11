@@ -294,3 +294,52 @@ impl CacheFieldCollection for CacheDir {
 
     fn mtime(&self) -> &chrono::DateTime<Utc> { &self.mtime }
 }
+
+use chrono::Local;
+
+#[cfg_attr(
+    feature = "external_doc",
+    doc(include = "CacheFieldPrettyPrinter.md")
+)]
+#[cfg_attr(
+    not(feature = "external_doc"),
+    doc = "A renderer of [CacheFieldCollection]s comparable to `ccache -s` \
+           output"
+)]
+pub trait CacheFieldPrettyPrinter
+where
+    Self: CacheFieldCollection,
+{
+    /// Emits (to stdout) a list of fields and their values in a similar
+    /// format to that emitted by `ccache -s`
+    fn pretty_print(&self) {
+        let mtime = self.mtime();
+        let fields = self.fields();
+        println!(
+            "{:<30} {:>9}",
+            "stats updated",
+            Local.timestamp(mtime.timestamp(), 0),
+        );
+        for field in FIELD_DISPLAY_ORDER {
+            let meta = field.metadata();
+            if !meta.is_flag_never() {
+                let value = fields.get_field(*field).to_owned();
+                match (value, meta.is_flag_always()) {
+                    (0u64, true) => println!(
+                        "{:<30} {:>9}",
+                        meta.message,
+                        field.format_value(value)
+                    ),
+                    (0u64, false) => {},
+                    _ => println!(
+                        "{:<30} {:>9}",
+                        meta.message,
+                        field.format_value(value)
+                    ),
+                }
+            }
+        }
+    }
+}
+impl CacheFieldPrettyPrinter for CacheLeaf {}
+impl CacheFieldPrettyPrinter for CacheDir {}

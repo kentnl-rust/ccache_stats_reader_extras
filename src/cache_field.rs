@@ -25,10 +25,20 @@ const FLAG_NEVER: u8 = 4;
 )]
 #[derive(Debug, Clone, Copy)]
 pub struct CacheFieldMeta {
-    id:      &'static str,
-    message: &'static str,
-    format:  CacheFieldFormat,
-    flags:   u8,
+    id:                 &'static str,
+    pub(super) message: &'static str,
+    format:             CacheFieldFormat,
+    flags:              u8,
+}
+
+impl CacheFieldMeta {
+    pub(super) fn is_flag_always(&self) -> bool {
+        self.flags & FLAG_ALWAYS == FLAG_ALWAYS
+    }
+
+    pub(super) fn is_flag_never(&self) -> bool {
+        self.flags & FLAG_NEVER == FLAG_NEVER
+    }
 }
 
 #[cfg_attr(feature = "external_doc", doc(include = "CacheField.md"))]
