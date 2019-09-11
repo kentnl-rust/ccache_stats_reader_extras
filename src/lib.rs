@@ -214,12 +214,16 @@ impl Default for CacheDir {
 
 impl CacheDir {
     /// Read a specified ccache root directory and collect statistics
-    pub fn read_dir(d: PathBuf) -> Result<Self, ErrorKind> {
+    pub fn read_dir<P>(d: P) -> Result<Self, ErrorKind>
+    where
+        P: Into<PathBuf>,
+    {
         let mut me: Self = Default::default();
-        me.add_leaf(d.join("stats"))?;
+        let dir: PathBuf = d.into();
+        me.add_leaf(dir.join("stats"))?;
         for i in 0..=0xF {
             if let Some(c) = std::char::from_digit(i, 16) {
-                me.add_leaf(d.join(c.to_string()).join("stats"))?;
+                me.add_leaf(dir.join(c.to_string()).join("stats"))?;
             }
         }
         Ok(me)
