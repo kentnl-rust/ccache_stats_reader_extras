@@ -25,7 +25,7 @@ const FLAG_NEVER: u8 = 4;
 )]
 #[derive(Debug, Clone, Copy)]
 pub struct CacheFieldMeta {
-    id:                 &'static str,
+    pub(super) id:      &'static str,
     pub(super) message: &'static str,
     format:             CacheFieldFormat,
     flags:              u8,

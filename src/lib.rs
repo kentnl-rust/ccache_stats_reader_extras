@@ -343,3 +343,36 @@ where
 }
 impl CacheFieldPrettyPrinter for CacheLeaf {}
 impl CacheFieldPrettyPrinter for CacheDir {}
+
+#[cfg_attr(
+    feature = "external_doc",
+    doc(include = "CacheFieldRawPrinter.md")
+)]
+#[cfg_attr(
+    not(feature = "external_doc"),
+    doc = "A renderer of [CacheFieldCollection]s comparable to `ccache \
+           --print-stats` output"
+)]
+
+pub trait CacheFieldRawPrinter
+where
+    Self: CacheFieldCollection,
+{
+    /// Emits (to stdout) a list of fields and their values in a format
+    /// similar to `ccache --print-stats`
+    fn raw_print(&self) {
+        let mtime = self.mtime();
+        let fields = self.fields();
+        println!("stats_updated_timestamp\t{}", mtime.timestamp());
+        for field in FIELD_DISPLAY_ORDER {
+            let meta = field.metadata();
+            if !meta.is_flag_never() {
+                let value = fields.get_field(*field);
+                println!("{}\t{}", meta.id, value);
+            }
+        }
+    }
+}
+
+impl CacheFieldRawPrinter for CacheLeaf {}
+impl CacheFieldRawPrinter for CacheDir {}
