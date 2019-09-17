@@ -51,6 +51,30 @@ impl From<std::io::Error> for ErrorKind {
 impl From<std::time::SystemTimeError> for ErrorKind {
     fn from(e: std::time::SystemTimeError) -> Self { ErrorKind::SysTime(e) }
 }
+impl std::fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorKind::IoError(e) => e.fmt(f),
+            ErrorKind::SysTime(e) => e.fmt(f),
+            ErrorKind::Stringy(s) => write!(f, "{}", s),
+            ErrorKind::ParseU64Error {
+                input_value,
+                input_file,
+                input_line,
+            } => write!(
+                f,
+                "could not parse u64 from value {:?} in {:?} line {}",
+                input_value, input_file, input_line
+            ),
+            ErrorKind::CacheLeafNonFile { input_path } => write!(
+                f,
+                "expected path {:?} to be a readable file, not a directory",
+                input_path
+            ),
+        }
+    }
+}
+impl std::error::Error for ErrorKind {}
 
 use chrono::{TimeZone, Utc};
 
