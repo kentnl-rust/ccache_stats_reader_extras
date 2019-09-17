@@ -1,3 +1,4 @@
+#![doc(html_root_url = "https://docs.rs/ccache_stats_reader/0.1.0")]
 #![cfg_attr(feature = "external_doc", feature(external_doc))]
 #![cfg_attr(feature = "non_exhaustive", feature(non_exhaustive))]
 #![cfg_attr(feature = "external_doc", doc(include = "lib.md"))]

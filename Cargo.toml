@@ -1,6 +1,6 @@
 [package]
 name = "ccache_stats_reader"
-version = "0.1.0"
+version = "0.1.0" # Update also in src/lib.rs
 authors = ["Kent Fredric <kentnl@gentoo.org>"]
 edition = "2018"
 description = "A read-only API for CCACHE_DIR"
