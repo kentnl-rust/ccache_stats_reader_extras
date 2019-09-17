@@ -1,6 +1,6 @@
 //! A trivial example demonstrating the use of [CacheDir::read_file]
 
-use ccache_stats_reader::{CacheDir, CacheFieldCollection, FIELD_DATA_ORDER};
+use ccache_stats_reader::{CacheDir, CacheFieldCollection};
 use std::path::PathBuf;
 
 fn main() {
@@ -11,7 +11,7 @@ fn main() {
     ))
     .unwrap();
 
-    for &field in FIELD_DATA_ORDER {
-        println!("{:?}: {}", field, leaf.get_field(field));
+    for (field, value) in leaf.iter() {
+        println!("{:?}: {}", field, value);
     }
 }

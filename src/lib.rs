@@ -10,8 +10,8 @@
 mod cache_field;
 pub use cache_field::{
     CacheField, CacheFieldData, CacheFieldFormat, CacheFieldMeta,
-    FIELD_DATA_ORDER, FIELD_DISPLAY_ORDER,
 };
+use cache_field::{FIELD_DATA_ORDER, FIELD_DISPLAY_ORDER};
 
 #[cfg_attr(feature = "external_doc", doc(include = "ErrorKind.md"))]
 #[cfg_attr(
@@ -287,6 +287,17 @@ pub trait CacheFieldCollection {
     fn mtime(&self) -> &chrono::DateTime<Utc>;
     /// Returns a value for the named field
     fn get_field(&self, f: CacheField) -> u64 { self.fields().get_field(f) }
+    /// Returns an iterator of (field, value) pairs in display order to
+    /// simplify loop and chain flow controls
+    fn iter<'a>(
+        &'a self,
+    ) -> Box<dyn Iterator<Item = (CacheField, u64)> + 'a> {
+        Box::new(
+            FIELD_DISPLAY_ORDER
+                .iter()
+                .map(move |&field| (field, self.get_field(field).to_owned())),
+        )
+    }
 }
 
 impl CacheFieldCollection for CacheLeaf {
@@ -320,30 +331,24 @@ where
     /// format to that emitted by `ccache -s`
     fn pretty_print(&self) {
         let mtime = self.mtime();
-        let fields = self.fields();
         println!(
             "{:<30} {:>9}",
             "stats updated",
             Local.timestamp(mtime.timestamp(), 0),
         );
-        for field in FIELD_DISPLAY_ORDER {
+        for (field, value) in self.iter() {
             let meta = field.metadata();
-            if !meta.is_flag_never() {
-                let value = fields.get_field(*field).to_owned();
-                match (value, meta.is_flag_always()) {
-                    (0u64, true) => println!(
-                        "{:<30} {:>9}",
-                        meta.message,
-                        field.format_value(value)
-                    ),
-                    (0u64, false) => {},
-                    _ => println!(
-                        "{:<30} {:>9}",
-                        meta.message,
-                        field.format_value(value)
-                    ),
-                }
+            if meta.is_flag_never() {
+                continue;
             }
+            if !meta.is_flag_always() && value == 0u64 {
+                continue;
+            }
+            println!(
+                "{:<30} {:>9}",
+                field.metadata().message,
+                field.format_value(value)
+            );
         }
     }
 }
@@ -368,14 +373,12 @@ where
     /// similar to `ccache --print-stats`
     fn raw_print(&self) {
         let mtime = self.mtime();
-        let fields = self.fields();
         println!("stats_updated_timestamp\t{}", mtime.timestamp());
-        for field in FIELD_DISPLAY_ORDER {
-            let meta = field.metadata();
-            if !meta.is_flag_never() {
-                let value = fields.get_field(*field);
-                println!("{}\t{}", meta.id, value);
+        for (field, value) in self.iter() {
+            if field.metadata().is_flag_never() {
+                continue;
             }
+            println!("{}\t{}", field.metadata().id, value);
         }
     }
 }

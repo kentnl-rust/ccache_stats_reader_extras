@@ -1,5 +1,5 @@
 //! A statistics monitor for ccache
-use ccache_stats_reader::{CacheDir, CacheFieldCollection, FIELD_DATA_ORDER};
+use ccache_stats_reader::{CacheDir, CacheFieldCollection};
 use std::{env, path::PathBuf, thread, time};
 
 fn main() {
@@ -9,16 +9,18 @@ fn main() {
         let elapsed = sleep_upto(5_000);
         println!("== {:?} ==", time::Instant::now());
         let new_cd = CacheDir::read_dir(&cache_path).unwrap();
-        for i in FIELD_DATA_ORDER {
-            let old = cd.get_field(*i);
-            let new = new_cd.get_field(*i);
-            if new != old {
-                let diff = new - old;
+        for (field, value) in new_cd.iter() {
+            if field.metadata().is_flag_never() {
+                continue;
+            }
+            let old = cd.get_field(field);
+            if value != old {
+                let diff = value - old;
                 println!(
                     "{:?} {} -> {} ( ~{} @ {:.3}/sec )",
-                    i,
+                    field,
                     old,
-                    new,
+                    value,
                     diff,
                     (diff as f64) / ((elapsed as f64) / 1000.0)
                 );

@@ -32,11 +32,13 @@ pub struct CacheFieldMeta {
 }
 
 impl CacheFieldMeta {
-    pub(super) fn is_flag_always(&self) -> bool {
+    /// Returns true if the fields value should be shown even when it is zero
+    pub fn is_flag_always(&self) -> bool {
         self.flags & FLAG_ALWAYS == FLAG_ALWAYS
     }
 
-    pub(super) fn is_flag_never(&self) -> bool {
+    /// Returns true if the fields value should never be shown
+    pub fn is_flag_never(&self) -> bool {
         self.flags & FLAG_NEVER == FLAG_NEVER
     }
 }
@@ -403,7 +405,7 @@ impl CacheFieldData {
 
 /// Contains an array of [CacheField] in "data order" ( that is, the sequence
 /// they should appear in a cache stats file )
-pub const FIELD_DATA_ORDER: &[CacheField] = &[
+pub(super) const FIELD_DATA_ORDER: &[CacheField] = &[
     CacheField::None,
     CacheField::StdOut,
     CacheField::Status,
@@ -441,7 +443,7 @@ pub const FIELD_DATA_ORDER: &[CacheField] = &[
 /// Contains an array of [CacheField] in "display order" ( that is, the
 /// sequence used when pretty-printing for end user consumption ), as defined
 /// in `ccache`'s `stats.cpp` (formerly `stats.c` )
-pub const FIELD_DISPLAY_ORDER: &[CacheField] = &[
+pub(super) const FIELD_DISPLAY_ORDER: &[CacheField] = &[
     CacheField::ZeroTimeStamp,
     CacheField::CacheHitDir,
     CacheField::CacheHitCpp,
