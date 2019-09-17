@@ -1,7 +1,7 @@
 //! A trivial example demonstrating the use of [CacheLeaf::read_file] with
-//! CacheFieldRawPrinter
+//! CacheFieldCollection
 
-use ccache_stats_reader::{CacheFieldRawPrinter, CacheLeaf};
+use ccache_stats_reader::{CacheFieldCollection, CacheLeaf};
 use std::path::PathBuf;
 
 fn main() {
@@ -11,5 +11,5 @@ fn main() {
             .expect("Must pass a path to a ccache 'stats' file"),
     ))
     .unwrap();
-    leaf.raw_print();
+    leaf.write_raw(std::io::stdout()).unwrap();
 }

@@ -1,7 +1,5 @@
 //! A workalike stats-only version of ccache
-use ccache_stats_reader::{
-    CacheDir, CacheFieldPrettyPrinter, CacheFieldRawPrinter,
-};
+use ccache_stats_reader::{CacheDir, CacheFieldCollection};
 use std::{env, path::PathBuf};
 
 enum Mode {
@@ -56,7 +54,7 @@ Options:
     };
     let cd = CacheDir::read_dir(cache_dir).unwrap();
     match mode {
-        Mode::Pretty => cd.pretty_print(),
-        Mode::Raw => cd.raw_print(),
+        Mode::Pretty => cd.write_pretty(std::io::stdout()).unwrap(),
+        Mode::Raw => cd.write_raw(std::io::stdout()).unwrap(),
     };
 }

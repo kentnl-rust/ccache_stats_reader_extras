@@ -1,7 +1,7 @@
 //! A trivial example demonstrating the use of [CacheDir::read_file] with
-//! [CacheFieldPrettyPrinter]
+//! [CacheFieldCollection]
 
-use ccache_stats_reader::{CacheDir, CacheFieldPrettyPrinter};
+use ccache_stats_reader::{CacheDir, CacheFieldCollection};
 use std::path::PathBuf;
 
 fn main() {
@@ -11,5 +11,5 @@ fn main() {
             .expect("Must pass a path to a ccache root dir"),
     ))
     .unwrap();
-    leaf.pretty_print();
+    leaf.write_pretty(std::io::stdout()).unwrap();
 }

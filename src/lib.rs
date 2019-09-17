@@ -271,6 +271,8 @@ impl CacheDir {
     }
 }
 
+use chrono::Local;
+
 #[cfg_attr(
     feature = "external_doc",
     doc(include = "CacheFieldCollection.md")
@@ -298,6 +300,53 @@ pub trait CacheFieldCollection {
                 .map(move |&field| (field, self.get_field(field).to_owned())),
         )
     }
+    /// Writes the data in this collection to the designated destination (such
+    /// as [std::io::stdout]) in a format similar to that produced by
+    /// `ccache --print-stats`
+    fn write_raw(
+        &self, mut fh: impl std::io::Write,
+    ) -> Result<(), ErrorKind> {
+        let mtime = self.mtime();
+        writeln!(fh, "stats_updated_timestamp\t{}", mtime.timestamp())?;
+        for (field, value) in self.iter() {
+            if field.metadata().is_flag_never() {
+                continue;
+            }
+            writeln!(fh, "{}\t{}", field.metadata().id, value)?;
+        }
+        Ok(())
+    }
+
+    /// Writes the data in this collection to the designated destination (such
+    /// as [std::io::stdout]) in a format similar to that produced by
+    /// `ccache -s`
+    fn write_pretty(
+        &self, mut fh: impl std::io::Write,
+    ) -> Result<(), ErrorKind> {
+        let mtime = self.mtime();
+        writeln!(
+            fh,
+            "{:<30} {:>9}",
+            "stats updated",
+            Local.timestamp(mtime.timestamp(), 0),
+        )?;
+        for (field, value) in self.iter() {
+            let meta = field.metadata();
+            if meta.is_flag_never() {
+                continue;
+            }
+            if !meta.is_flag_always() && value == 0u64 {
+                continue;
+            }
+            writeln!(
+                fh,
+                "{:<30} {:>9}",
+                field.metadata().message,
+                field.format_value(value)
+            )?;
+        }
+        Ok(())
+    }
 }
 
 impl CacheFieldCollection for CacheLeaf {
@@ -311,77 +360,3 @@ impl CacheFieldCollection for CacheDir {
 
     fn mtime(&self) -> &chrono::DateTime<Utc> { &self.mtime }
 }
-
-use chrono::Local;
-
-#[cfg_attr(
-    feature = "external_doc",
-    doc(include = "CacheFieldPrettyPrinter.md")
-)]
-#[cfg_attr(
-    not(feature = "external_doc"),
-    doc = "A renderer of [CacheFieldCollection]s comparable to `ccache -s` \
-           output"
-)]
-pub trait CacheFieldPrettyPrinter
-where
-    Self: CacheFieldCollection,
-{
-    /// Emits (to stdout) a list of fields and their values in a similar
-    /// format to that emitted by `ccache -s`
-    fn pretty_print(&self) {
-        let mtime = self.mtime();
-        println!(
-            "{:<30} {:>9}",
-            "stats updated",
-            Local.timestamp(mtime.timestamp(), 0),
-        );
-        for (field, value) in self.iter() {
-            let meta = field.metadata();
-            if meta.is_flag_never() {
-                continue;
-            }
-            if !meta.is_flag_always() && value == 0u64 {
-                continue;
-            }
-            println!(
-                "{:<30} {:>9}",
-                field.metadata().message,
-                field.format_value(value)
-            );
-        }
-    }
-}
-impl CacheFieldPrettyPrinter for CacheLeaf {}
-impl CacheFieldPrettyPrinter for CacheDir {}
-
-#[cfg_attr(
-    feature = "external_doc",
-    doc(include = "CacheFieldRawPrinter.md")
-)]
-#[cfg_attr(
-    not(feature = "external_doc"),
-    doc = "A renderer of [CacheFieldCollection]s comparable to `ccache \
-           --print-stats` output"
-)]
-
-pub trait CacheFieldRawPrinter
-where
-    Self: CacheFieldCollection,
-{
-    /// Emits (to stdout) a list of fields and their values in a format
-    /// similar to `ccache --print-stats`
-    fn raw_print(&self) {
-        let mtime = self.mtime();
-        println!("stats_updated_timestamp\t{}", mtime.timestamp());
-        for (field, value) in self.iter() {
-            if field.metadata().is_flag_never() {
-                continue;
-            }
-            println!("{}\t{}", field.metadata().id, value);
-        }
-    }
-}
-
-impl CacheFieldRawPrinter for CacheLeaf {}
-impl CacheFieldRawPrinter for CacheDir {}
