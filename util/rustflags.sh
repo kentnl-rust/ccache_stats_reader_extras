@@ -53,7 +53,7 @@ if [[ "${STABLE:-0}" == 0 ]]; then
   "-Z" "unstable-options"
   "--disable-minification"
   "--enable-index-page"
-#  "--extern-html-root-url" "chrono=https://docs.rs/display_attr/0.4.7"
+  "--extern-html-root-url" "chrono=https://docs.rs/chrono/0.4.9"
   )
 fi
 
