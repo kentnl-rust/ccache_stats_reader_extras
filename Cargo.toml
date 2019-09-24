@@ -1,6 +1,6 @@
 [package]
 name = "ccache_stats_reader"
-version = "0.1.0" # Update also in src/lib.rs
+version = "0.1.1" # Update also in src/lib.rs
 authors = ["Kent Fredric <kentnl@gentoo.org>"]
 edition = "2018"
 description = "A read-only API for CCACHE_DIR"
@@ -18,8 +18,9 @@ external_doc = []
 non_exhaustive = []
 
 [dependencies.chrono]
-# This is the minimum version I can get compiling on 1.31.0
-version = "> 0.2.23"
+# 0.2.23 is the minimum version I can get compiling on 1.31.0
+# 0.4.0 is the first version that ships the ::Utc struct/trait
+version = ">= 0.4.0"
 
 [package.metadata.docs.rs]
 features = [ "nightly" ]

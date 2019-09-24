@@ -47,9 +47,9 @@ advanced() {
 }
 
 simple() {
-  switchup time:0.1.0 0.1.25
-  switchup gcc:0.3.0 0.3.4
-  switchup libc:0.1.0 0.1.5
+  #switchup time:0.1.0 0.1.25
+  #switchup gcc:0.3.0 0.3.4
+  #switchup libc:0.1.0 0.1.5
   switchup num:0.1.0 0.1.27
   true;
 }
