@@ -1,0 +1,21 @@
+name: Rust min-deps
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Get Old Toolchain
+        run: rustup toolchain install 1.31.0
+      - name: Get nightly toolchain
+        run: rustup toolchain install nightly
+      - name: Set nightly as default
+        run: rustup default nightly
+      - name: Downgrade
+        run: STABLE=1 bash util/mindeps.sh
+      - name: Build
+        run: cargo +1.31.0 build --verbose
+      - name: Run tests
+        run: cargo +1.31.0 test --verbose
