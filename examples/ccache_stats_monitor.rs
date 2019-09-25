@@ -22,7 +22,7 @@ fn main() {
                     old,
                     value,
                     diff,
-                    (diff as f64) / ((elapsed as f64) / 1000.0)
+                    (diff as f64) / elapsed
                 );
             }
         }
@@ -30,7 +30,7 @@ fn main() {
     }
 }
 
-fn sleep_upto(t: u64) -> u128 {
+fn sleep_upto(t: u64) -> f64 {
     let poll_duration = time::Duration::from_millis(t / 10);
     let duration = time::Duration::from_millis(t);
     let now = time::Instant::now();
@@ -40,7 +40,8 @@ fn sleep_upto(t: u64) -> u128 {
             break;
         }
     }
-    now.elapsed().as_millis()
+    let e = now.elapsed();
+    (e.as_secs() as f64) + ((e.subsec_millis() as f64) / 1000.0)
 }
 
 fn cache_path() -> PathBuf {
