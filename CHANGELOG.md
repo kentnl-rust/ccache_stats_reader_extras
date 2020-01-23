@@ -1,4 +1,2 @@
-### 0.1.1
-
-- Fixed minimum declared chrono requirement to 0.4.0 to coincide
-  with the introduction of the "Utc" struct.
+### 0.1.0
+- Forked out of ccache_stats_reader ~ 0.1.1
