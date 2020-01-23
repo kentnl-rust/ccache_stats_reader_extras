@@ -16,7 +16,6 @@ nightly = ["ccache_stats_reader/nightly"]
 
 [dependencies.ccache_stats_reader]
 version = "0.1"
-path = "../ccache_stats_reader"
 
 [package.metadata.docs.rs]
 features = [ "nightly" ]
