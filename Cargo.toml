@@ -6,7 +6,7 @@ edition = "2018"
 description = "Extras (examples, tests, etc) for ccache_stats_reader"
 license = "Artistic-1.0 OR GPL-2.0-or-later"
 repository = "https://github.com/kentnl-rust/ccache_stats_reader_extras.git"
-exclude = ["/target/doc/**", "/.gitignore", "/.cargo/**", "/util/**"]
+exclude = ["/target/doc/**", "/.gitignore", "/.cargo/**", "/util/**", "/rustfmt.toml", "/.github"]
 keywords = ["ccache", "examples" ]
 categories = []
 
