@@ -50,8 +50,7 @@ simple() {
   #switchup time:0.1.0 0.1.25
   #switchup gcc:0.3.0 0.3.4
   #switchup libc:0.1.0 0.1.5
-  switchup chrono:0.2.24 0.4.0
-  switchup num:0.1.0 0.1.27
+  switchup ccache_stats_reader:0.1.0 0.1.2
   true;
 }
 
