@@ -13,6 +13,8 @@ jobs:
         run: rustup toolchain install nightly
       - name: Set nightly as default
         run: rustup default nightly
+      - name: Update index
+        run : cargo +1.31.0 update
       - name: Downgrade
         run: STABLE=1 bash util/mindeps.sh
       - name: Build
